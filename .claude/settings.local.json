@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:nfs.faireconomy.media)",
+      "WebFetch(domain:birdie0.github.io)",
+      "WebFetch(domain:site.financialmodelingprep.com)",
+      "WebFetch(domain:inventivehq.com)",
+      "WebFetch(domain:finnhub.io)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:medium.com)",
+      "WebFetch(domain:dylanbritz.dev)",
+      "WebFetch(domain:docs.github.com)",
+      "WebFetch(domain:www.jblanked.com)"
+    ]
+  }
+}

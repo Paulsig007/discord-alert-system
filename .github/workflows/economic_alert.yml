@@ -1,0 +1,32 @@
+name: Daily Economic Calendar Alert
+
+on:
+  schedule:
+    # 12:30 UTC = 7:30 AM ET (EST) / 8:30 AM ET (EDT)
+    # Runs before US market open (9:30 AM ET) on weekdays.
+    # GitHub cron can run up to ~15 min late during high load.
+    - cron: '30 12 * * 1-5'
+
+  # Lets you trigger manually from the GitHub Actions UI (useful for testing)
+  workflow_dispatch:
+
+jobs:
+  send-alert:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Send economic calendar alert
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: python alert.py
