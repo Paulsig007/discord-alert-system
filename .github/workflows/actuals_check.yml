@@ -1,0 +1,49 @@
+name: Economic Data Actuals Check
+
+on:
+  schedule:
+    # Each release window has TWO entries — one for EDT (UTC-4, summer) and one for EST (UTC-5, winter).
+    # actuals.py uses a 20-minute lookback window, so the "wrong season" cron always finds nothing
+    # and exits silently. This is the same DST strategy used by the evening preview.
+
+    # ── 8:30 AM ET ──────────────────────────────────────────────────────────
+    # Covers: NFP, CPI, Core CPI, PPI, GDP, Retail Sales, Housing Starts,
+    #         Building Permits, Trade Balance, Jobless Claims, and more.
+    - cron: '35 12 * * 1-5'   # 8:35 AM EDT
+    - cron: '35 13 * * 1-5'   # 8:35 AM EST
+
+    # ── 10:00 AM ET ─────────────────────────────────────────────────────────
+    # Covers: ISM Manufacturing PMI, ISM Services PMI, Consumer Confidence,
+    #         JOLTS Job Openings, Existing Home Sales, New Home Sales, and more.
+    - cron: '5 14 * * 1-5'    # 10:05 AM EDT
+    - cron: '5 15 * * 1-5'    # 10:05 AM EST
+
+    # ── 2:00 PM ET ──────────────────────────────────────────────────────────
+    # Covers: FOMC Rate Decision (most powerful single event).
+    - cron: '5 18 * * 1-5'    # 2:05 PM EDT
+    - cron: '5 19 * * 1-5'    # 2:05 PM EST
+
+  # Manual trigger for testing from the GitHub Actions UI
+  workflow_dispatch:
+
+jobs:
+  check-actuals:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check and report actuals
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
+        run: python actuals.py

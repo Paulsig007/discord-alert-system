@@ -12,7 +12,13 @@
       "WebFetch(domain:medium.com)",
       "WebFetch(domain:dylanbritz.dev)",
       "WebFetch(domain:docs.github.com)",
-      "WebFetch(domain:www.jblanked.com)"
+      "WebFetch(domain:www.jblanked.com)",
+      "WebFetch(domain:databar.ai)",
+      "WebFetch(domain:www.mcpbundles.com)",
+      "WebFetch(domain:stephen137.github.io)",
+      "WebFetch(domain:www.insightbig.com)",
+      "WebFetch(domain:thinh-vu.github.io)",
+      "Bash(curl:*)"
     ]
   }
 }

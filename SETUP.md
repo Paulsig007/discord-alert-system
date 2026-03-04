@@ -1,6 +1,13 @@
 # Discord Economic Calendar Alert — Setup Guide
 
-Sends a daily Discord message every weekday morning listing US economic events (NFP, CPI, PMI, etc.) with stock market impact hints.
+This is **Part 1** of a two-part system:
+
+| Part | What it does | Guide |
+|---|---|---|
+| **1 — Evening Preview** *(this file)* | Sends a message at 6 PM MT previewing the next day's events with market impact hints | `SETUP.md` |
+| **2 — Actuals Reporter** | Sends a message ~5 min after each economic release with the actual number vs forecast | `ACTUALS_SETUP.md` |
+
+Set up Part 1 first, then follow `ACTUALS_SETUP.md` to add the actuals reporter.
 
 **Cost: $0. No server required.**
 
@@ -185,9 +192,14 @@ Any event not in the hint library still appears with a generic "compare actual v
 - Very rarely, the feed may be temporarily unavailable — the script will fail with an error visible in the Actions log
 
 **The feed shows forecast/previous but not actual values**
-- This is a known limitation of the free Forex Factory feed — it only shows scheduled/expected data
-- Actual released values require a paid API (e.g. Financial Modeling Prep)
-- For the purpose of a morning briefing, forecast + previous is all you need
+- This is expected — the Forex Factory feed is pre-release only (scheduled events and forecasts)
+- Actual numbers are reported by the companion actuals system — see `ACTUALS_SETUP.md`
+
+---
+
+## What's Next
+
+Once the evening preview is working, set up the actuals reporter to receive real-time results as data drops throughout the trading day → **see `ACTUALS_SETUP.md`**
 
 ---
 
@@ -195,10 +207,13 @@ Any event not in the hint library still appears with a generic "compare actual v
 
 ```
 discord-alert-system/
-├── alert.py                          # Main script
-├── requirements.txt                  # Python dependencies
-├── SETUP.md                          # This file
+├── alert.py                              # Evening preview script
+├── actuals.py                            # Actuals reporter script
+├── requirements.txt                      # Python dependencies (shared)
+├── SETUP.md                              # This file — evening preview setup
+├── ACTUALS_SETUP.md                      # Actuals reporter setup
 └── .github/
     └── workflows/
-        └── economic_alert.yml        # GitHub Actions scheduler
+        ├── economic_alert.yml            # Cron: evening preview (6 PM MT weekdays)
+        └── actuals_check.yml             # Cron: actuals check (5 min after each release)
 ```
