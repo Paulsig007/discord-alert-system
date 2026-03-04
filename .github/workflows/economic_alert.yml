@@ -2,10 +2,13 @@ name: Daily Economic Calendar Alert
 
 on:
   schedule:
-    # 12:30 UTC = 7:30 AM ET (EST) / 8:30 AM ET (EDT)
-    # Runs before US market open (9:30 AM ET) on weekdays.
-    # GitHub cron can run up to ~15 min late during high load.
-    - cron: '30 12 * * 1-5'
+    # Two schedules to handle Daylight Saving Time automatically.
+    # The Python script checks the actual MT clock and skips if it isn't 6 PM.
+    #
+    # 6 PM MDT (summer, UTC-6) = 00:00 UTC next day → runs Tue–Sat UTC (= Mon–Fri MDT)
+    - cron: '0 0 * * 2-6'
+    # 6 PM MST (winter, UTC-7) = 01:00 UTC next day → runs Tue–Sat UTC (= Mon–Fri MST)
+    - cron: '0 1 * * 2-6'
 
   # Lets you trigger manually from the GitHub Actions UI (useful for testing)
   workflow_dispatch:

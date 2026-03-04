@@ -23,7 +23,7 @@ from dateutil import parser as date_parser
 
 CALENDAR_URL = "https://nfs.faireconomy.media/ff_calendar_thisweek.json"
 WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
-ET = ZoneInfo("America/New_York")
+MT = ZoneInfo("America/Denver")   # Mountain Time (handles MST/MDT automatically)
 
 # Which impact levels to include in the alert
 INCLUDE_IMPACT = {"High", "Medium"}
@@ -254,8 +254,8 @@ def get_hint(title: str) -> dict:
     return DEFAULT_HINT
 
 
-def fetch_events(today: datetime.date) -> list[dict]:
-    """Return today's USD high/medium impact events, sorted by time."""
+def fetch_events(target_date: datetime.date) -> list[dict]:
+    """Return USD high/medium impact events for target_date, sorted by time."""
     headers = {"User-Agent": "discord-economic-alert-bot/1.0"}
     resp = requests.get(CALENDAR_URL, headers=headers, timeout=15)
     resp.raise_for_status()
@@ -267,25 +267,25 @@ def fetch_events(today: datetime.date) -> list[dict]:
         if item.get("impact") not in INCLUDE_IMPACT:
             continue
         try:
-            dt_et = date_parser.parse(item["date"]).astimezone(ET)
+            dt_mt = date_parser.parse(item["date"]).astimezone(MT)
         except Exception:
             continue
-        if dt_et.date() == today:
-            item["_dt"] = dt_et
+        if dt_mt.date() == target_date:
+            item["_dt"] = dt_mt
             events.append(item)
 
     events.sort(key=lambda e: e["_dt"])
     return events
 
 
-def build_payload(events: list[dict], today: datetime.date) -> dict:
+def build_payload(events: list[dict], target_date: datetime.date) -> dict:
     """Build the Discord webhook payload with embeds."""
-    date_str = f"{today.strftime('%A, %B')} {today.day}, {today.year}"
+    date_str = f"{target_date.strftime('%A, %B')} {target_date.day}, {target_date.year}"
 
     if not events:
         embed = {
-            "title": f"📅 US Economic Calendar — {date_str}",
-            "description": "No high or medium impact USD events scheduled today. Clear calendar — focus on price action.",
+            "title": f"📅 Tomorrow's US Economic Calendar — {date_str}",
+            "description": "No high or medium impact USD events scheduled tomorrow. Clear calendar — focus on price action.",
             "color": 9807270,  # Gray
             "footer": {"text": "Source: Forex Factory  •  Not financial advice"},
             "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
@@ -307,7 +307,7 @@ def build_payload(events: list[dict], today: datetime.date) -> dict:
     fields = []
     for ev in events[:25]:  # Discord hard limit: 25 fields
         dt: datetime.datetime = ev["_dt"]
-        time_str = dt.strftime("%-I:%M %p ET")
+        time_str = dt.strftime("%-I:%M %p MT")
         hint = get_hint(ev["title"])
         forecast = ev.get("forecast") or "N/A"
         previous = ev.get("previous") or "N/A"
@@ -326,15 +326,15 @@ def build_payload(events: list[dict], today: datetime.date) -> dict:
         })
 
     embed = {
-        "title": f"📊 US Economic Calendar — {date_str}",
+        "title": f"📊 Tomorrow's US Economic Events — {date_str}",
         "description": (
             f"{count_str}\n\n"
             "Surprise beats/misses vs forecast drive short-term volatility.\n"
-            "Release times are Eastern — most data drops at **8:30 AM** or **10:00 AM ET**."
+            "Most data drops at **6:30 AM** or **8:00 AM MT**."
         ),
         "color": color,
         "fields": fields,
-        "footer": {"text": "Source: Forex Factory  •  Times in US Eastern  •  Not financial advice"},
+        "footer": {"text": "Source: Forex Factory  •  Times in Mountain Time  •  Not financial advice"},
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
     }
 
@@ -360,13 +360,21 @@ def main() -> None:
         print("ERROR: DISCORD_WEBHOOK_URL environment variable is not set.", file=sys.stderr)
         sys.exit(1)
 
-    today = datetime.datetime.now(ET).date()
-    print(f"Fetching economic events for {today} (ET)...")
+    now_mt = datetime.datetime.now(MT)
 
-    events = fetch_events(today)
+    # Guard: two cron schedules fire (00:00 and 01:00 UTC) to cover both MDT and MST.
+    # Only the one that lands at 6 PM MT should actually send — exit early otherwise.
+    if now_mt.hour != 18:
+        print(f"Skipping — current MT time is {now_mt.strftime('%I:%M %p MT')} (not 6 PM).")
+        sys.exit(0)
+
+    tomorrow = (now_mt + datetime.timedelta(days=1)).date()
+    print(f"Fetching economic events for {tomorrow} (MT)...")
+
+    events = fetch_events(tomorrow)
     print(f"Found {len(events)} USD high/medium impact event(s).")
 
-    payload = build_payload(events, today)
+    payload = build_payload(events, tomorrow)
     send_webhook(WEBHOOK_URL, payload)
 
 

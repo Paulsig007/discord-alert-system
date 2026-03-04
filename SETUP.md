@@ -89,61 +89,50 @@ If you see a message, you're done. ✓
 
 ## Schedule
 
-The alert fires automatically at **12:30 UTC every Monday–Friday**, which is:
+The alert fires every **Monday–Friday at 6:00 PM Mountain Time**, previewing the next day's events.
 
-| Season | Local time |
-|---|---|
-| Eastern Standard Time (EST, Nov–Mar) | 7:30 AM ET |
-| Eastern Daylight Time (EDT, Mar–Nov) | 8:30 AM ET |
+| Season | MT time | UTC time |
+|---|---|---|
+| Mountain Daylight Time (MDT, Mar–Nov) | 6:00 PM MDT | 00:00 UTC (next day) |
+| Mountain Standard Time (MST, Nov–Mar) | 6:00 PM MST | 01:00 UTC (next day) |
 
-This is before US market open (9:30 AM ET), giving you time to review upcoming events.
+**How DST is handled:** Two cron schedules run (00:00 and 01:00 UTC). The Python script checks the actual Mountain Time clock on each trigger and silently exits if it isn't 6 PM — so only the correct one fires each day, all year round.
 
 > **Note:** GitHub's scheduler can run up to ~15 minutes late during high-traffic periods. This is normal.
 
-To change the time, edit the `cron` line in `.github/workflows/economic_alert.yml`:
-
-```yaml
-- cron: '30 12 * * 1-5'   # minute hour day month weekday (UTC)
-```
-
-Examples:
-```
-'0 13 * * 1-5'   →  1:00 PM UTC  =  9:00 AM ET
-'0 14 * * 1-5'   →  2:00 PM UTC  =  10:00 AM ET
-'0 9 * * 1-5'    →  9:00 AM UTC  =  5:00 AM ET
-```
+To change the delivery time, update both cron lines in `.github/workflows/economic_alert.yml` and the hour check in `alert.py` (`if now_mt.hour != 18`). Use [worldtimeserver.com](https://www.worldtimeserver.com) to convert your desired MT time to UTC.
 
 ---
 
 ## What the Alert Looks Like
 
 ```
-📊 US Economic Calendar — Friday, March 7, 2026
+📊 Tomorrow's US Economic Events — Friday, March 7, 2026
 🔴 2 High  |  🟡 1 Medium
 
 Surprise beats/misses vs forecast drive short-term volatility.
-Release times are Eastern — most data drops at 8:30 AM or 10:00 AM ET.
+Most data drops at 6:30 AM or 8:00 AM MT.
 
 ────────────────────────────────────────
-🕐 8:30 AM ET — Non-Farm Employment Change
+🕐 6:30 AM MT — Non-Farm Employment Change
 🔴 High Impact
 Forecast: 170K  |  Previous: 143K
 🔑 Biggest monthly mover. Strong jobs = bullish. Weak = bearish.
 ✅ Bullish if: higher than forecast
 
-🕐 8:30 AM ET — Unemployment Rate
+🕐 6:30 AM MT — Unemployment Rate
 🔴 High Impact
 Forecast: 4.1%  |  Previous: 4.0%
 📉 Inverse relationship: lower rate = bullish. Higher = bearish.
 ✅ Bullish if: lower than forecast
 
-🕐 10:00 AM ET — ISM Services PMI
+🕐 8:00 AM MT — ISM Services PMI
 🟡 Medium Impact
 Forecast: 52.8  |  Previous: 52.1
 🏢 Services = ~70% of US economy. >50 = bullish. Beats here drive broad rallies.
 ✅ Bullish if: above 50 and above forecast
 ────────────────────────────────────────
-Source: Forex Factory  •  Times in US Eastern  •  Not financial advice
+Source: Forex Factory  •  Times in Mountain Time  •  Not financial advice
 ```
 
 ---
